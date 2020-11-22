@@ -1,2 +1,2 @@
 # dotspacemacs
- My personal Spacemacs configuration
+Personal Spacemacs configuration
