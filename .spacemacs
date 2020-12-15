@@ -377,7 +377,7 @@ values."
   ;; neotree
   ;;
   (setq neo-theme 'ascii)
-  (setq neo-hidden-regexp-list '("\\.o$" "\\.pyc$"))
+  (setq neo-hidden-regexp-list '("\\.o$" "\\.pyc$" "^__pycache__$" "^\\.#" "^\\.DS_Store$"))
   (setq neo-show-hidden-files nil)
   (setq neo-autorefresh t)
 
