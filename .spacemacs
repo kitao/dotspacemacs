@@ -440,12 +440,12 @@ values."
   ;;
   ;; nim-mode
   ;;
-  (defun nim-after-save-hook ()
-    (when (eq major-mode 'nim-mode)
-      (let ((file-name (buffer-file-name (window-buffer (minibuffer-selected-window)))))
-        (shell-command (format "nimpretty --indent:2 %s" file-name) nil))))
+  ;;(defun nim-after-save-hook ()
+  ;;  (when (eq major-mode 'nim-mode)
+  ;;    (let ((file-name (buffer-file-name (window-buffer (minibuffer-selected-window)))))
+  ;;      (shell-command (format "nimpretty --indent:2 %s" file-name) nil))))
 
-  (add-hook 'after-save-hook 'nim-after-save-hook)
+  ;;(add-hook 'after-save-hook 'nim-after-save-hook)
   )
 
 (custom-set-variables
