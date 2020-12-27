@@ -32,7 +32,9 @@ This function should only modify configuration layer settings."
 
    ;; List of configuration layers to load.
    dotspacemacs-configuration-layers
-   '(
+   '(rust
+     python
+     markdown
      ;; ----------------------------------------------------------------
      ;; Example of useful layers you may want to use right away.
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
@@ -47,14 +49,19 @@ This function should only modify configuration layer settings."
      ;; markdown
      multiple-cursors
      ;; org
-     ;; (shell :variables
-     ;;        shell-default-height 30
-     ;;        shell-default-position 'bottom)
+     (shell :variables
+            shell-default-shell 'ansi-term
+            shell-default-position 'bottom
+            shell-default-height 25
+            shell-pop-autocd-to-working-dir nil
+            close-window-with-terminal t)
      ;; spell-checking
      ;; syntax-checking
      ;; version-control
-     treemacs)
-
+     (treemacs :variables
+               treemacs-width 30
+               treemacs-no-png-images t)
+     )
 
    ;; List of additional packages that will be installed without being wrapped
    ;; in a layer (generally the packages are installed only and should still be
@@ -64,7 +71,7 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '()
+   dotspacemacs-additional-packages '(format-all)
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -231,7 +238,7 @@ It should only modify the values of Spacemacs settings."
    ;; a non-negative integer (pixel size), or a floating-point (point size).
    ;; Point size is recommended, because it's device independent. (default 10.0)
    dotspacemacs-default-font '("Source Code Pro"
-                               :size 10.0
+                               :size 15.0
                                :weight normal
                                :width normal)
 
@@ -325,7 +332,7 @@ It should only modify the values of Spacemacs settings."
 
    ;; If non-nil the frame is fullscreen when Emacs starts up. (default nil)
    ;; (Emacs 24.4+ only)
-   dotspacemacs-fullscreen-at-startup nil
+   dotspacemacs-fullscreen-at-startup t
 
    ;; If non-nil `spacemacs/toggle-fullscreen' will not use native fullscreen.
    ;; Use to disable fullscreen animations in OSX. (default nil)
@@ -496,6 +503,45 @@ This function is called immediately after `dotspacemacs/init', before layer
 configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
+  ;;
+  ;; working directories
+  ;;
+  (setq default-directory "~/")
+  (setq command-line-default-directory "~/")
+
+  ;;
+  ;; environment variables
+  ;;
+  (setenv "PYTHONPATH"
+          (concat
+           (getenv "HOME") "/OneDrive/projects/pyxel"
+           ":" (getenv "PYTHONPATH")))
+
+  ;;
+  ;; key bindings
+  ;;
+  (define-key key-translation-map [?\C-h] [?\C-?])
+  (define-key key-translation-map [?\M-¥] [?\\])
+
+  (when (eq system-type 'darwin)
+    (setq ns-command-modifier (quote meta)))
+
+  ;;
+  ;; syntax
+  ;;
+  (modify-syntax-entry ?_ "w")
+
+  ;;
+  ;; undo-tree
+  ;;
+  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
+  (setq undo-tree-auto-save-history t)
+
+  ;;
+  ;; format-all
+  ;;
+  (add-hook 'before-save-hook 'format-all-buffer)
+  (add-hook 'before-save-hook 'py-isort-before-save)
   )
 
 (defun dotspacemacs/user-load ()
@@ -503,6 +549,15 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
 This function is called only while dumping Spacemacs configuration. You can
 `require' or `load' the libraries of your choice that will be included in the
 dump."
+  ;;
+  ;; company
+  ;;
+  (global-company-mode)
+  (define-key company-active-map (kbd "C-n") 'company-select-next)
+  (define-key company-active-map (kbd "C-p") 'company-select-previous)
+  (define-key company-active-map (kbd "C-h") nil)
+  (define-key company-search-map (kbd "C-n") 'company-select-next)
+  (define-key company-search-map (kbd "C-p") 'company-select-previous)
   )
 
 (defun dotspacemacs/user-config ()
@@ -511,7 +566,106 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
+  ;;
+  ;; utility functions
+  ;;
+  (defun get-window-in-mode (mode)
+    (catch 'found
+      (dolist (buf (buffer-list) nil)
+        (with-current-buffer buf
+          (when (eq major-mode mode)
+            (throw 'found (get-buffer-window buf)))))))
+
+  (defun focused-window-p (win)
+    (and win (eq win (selected-window))))
+
+  ;;
+  ;; Treemacs
+  ;;
+  (defun switch-treemacs ()
+    (interactive)
+    (let ((win (get-window-in-mode 'treemacs-mode)))
+      (cond ((focused-window-p win) (winum-select-window-1))
+            (win (winum-select-window-1) (select-window win))
+            (t (winum-select-window-1) (treemacs-select-window)))))
+
+  (bind-key* "C-;" 'switch-treemacs)
+
+  (treemacs-select-window)
+
+  ;;
+  ;; Shell
+  ;;
+  (evil-set-initial-state 'term-mode 'emacs)
+
+  (evil-define-key nil term-raw-map (kbd "C-u") 'scroll-down)
+  (evil-define-key nil term-raw-map (kbd "C-d") 'scroll-up)
+  ;;(bind-key "C-u" 'scroll-down term-raw-map)
+  ;;(bind-key "C-d" 'scroll-up term-raw-map)
+
+  (defun toggle-shell ()
+    (interactive)
+    (let ((win (get-window-in-mode 'term-mode)))
+      (cond ((focused-window-p win) (winum-select-window-1) (delete-window win))
+            (win (delete-window win))
+            (t (spacemacs/default-pop-shell)))))
+
+  (bind-key* "C-@" 'toggle-shell)
+
+  (defun switch-shell ()
+    (interactive)
+    (let ((win (get-window-in-mode 'term-mode)))
+      (cond ((focused-window-p win) (winum-select-window-1))
+            (win (select-window win))
+            (t (spacemacs/default-pop-shell)))))
+
+  (bind-key* "C-:" 'switch-shell)
+
+  ;;
+  ;; c++-mode
+  ;;
+  (setq auto-mode-alist
+        (append '(("\\.h$" . c++-mode))
+                auto-mode-alist))
+
+  (add-hook 'c++-mode-hook
+            '(lambda()
+               ;;(c-set-style "stroustrup")
+               ;;(setq indent-tabs-mode nil)
+               (c-set-offset 'innamespace 0)
+               (c-set-offset 'inextern-lang 0)
+               ;;(c-set-offset 'arglist-close 0)
+               ))
+
+  ;;
+  ;; nim-mode
+  ;;
+  ;;(defun nim-after-save-hook ()
+  ;;  (when (eq major-mode 'nim-mode)
+  ;;    (let ((file-name (buffer-file-name (window-buffer (minibuffer-selected-window)))))
+  ;;      (shell-command (format "nimpretty --indent:2 %s" file-name) nil))))
+
+  ;;(add-hook 'after-save-hook 'nim-after-save-hook)
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
 ;; auto-generate custom variable definitions.
+(defun dotspacemacs/emacs-custom-settings ()
+  "Emacs custom settings.
+This is an auto-generated function, do not modify its content directly, use
+Emacs customize menu instead.
+This function is called at the very end of Spacemacs initialization."
+  (custom-set-variables
+   ;; custom-set-variables was added by Custom.
+   ;; If you edit it by hand, you could mess it up, so be careful.
+   ;; Your init file should contain only one such instance.
+   ;; If there is more than one, they won't work right.
+   '(package-selected-packages
+     '(toml-mode ron-mode racer pos-tip helm-gtags ggtags flycheck-rust dap-mode lsp-treemacs bui lsp-mode cfrs posframe dash-functional counsel-gtags counsel swiper ivy company cargo rust-mode yapfify xterm-color ws-butler writeroom-mode winum which-key vterm volatile-highlights vi-tilde-fringe valign uuidgen use-package undo-tree treemacs-projectile treemacs-persp treemacs-icons-dired treemacs-evil toc-org terminal-here symon symbol-overlay string-inflection sphinx-doc spaceline-all-the-icons shell-pop restart-emacs request rainbow-delimiters pytest pyenv-mode py-isort popwin pippel pipenv pip-requirements pcre2el password-generator paradox overseer org-superstar open-junk-file neotree nameless multi-term move-text mmm-mode markdown-toc macrostep lorem-ipsum live-py-mode link-hint indent-guide importmagic hybrid-mode hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation helm-xref helm-themes helm-swoop helm-pydoc helm-purpose helm-projectile helm-org helm-mode-manager helm-make helm-ls-git helm-flx helm-descbinds helm-ag google-translate golden-ratio gh-md format-all font-lock+ flycheck-package flycheck-elsa flx-ido fancy-battery eyebrowse expand-region evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-textobj-line evil-surround evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-lion evil-indent-plus evil-iedit-state evil-goggles evil-exchange evil-escape evil-ediff evil-easymotion evil-cleverparens evil-args evil-anzu eval-sexp-fu eshell-z eshell-prompt-extras esh-help emr elisp-slime-nav editorconfig dumb-jump dotenv-mode dired-quick-sort diminish devdocs define-word cython-mode column-enforce-mode clean-aindent-mode centered-cursor-mode blacken auto-highlight-symbol auto-compile anaconda-mode aggressive-indent ace-link ace-jump-helm-line)))
+  (custom-set-faces
+   ;; custom-set-faces was added by Custom.
+   ;; If you edit it by hand, you could mess it up, so be careful.
+   ;; Your init file should contain only one such instance.
+   ;; If there is more than one, they won't work right.
+   )
+  )
