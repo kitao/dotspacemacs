@@ -567,29 +567,10 @@ configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
   ;;
-  ;; utility functions
-  ;;
-  (defun get-window-in-mode (mode)
-    (catch 'found
-      (dolist (buf (buffer-list) nil)
-        (with-current-buffer buf
-          (when (eq major-mode mode)
-            (throw 'found (get-buffer-window buf)))))))
-
-  (defun focused-window-p (win)
-    (and win (eq win (selected-window))))
-
-  ;;
   ;; Treemacs
   ;;
-  (defun switch-treemacs ()
-    (interactive)
-    (let ((win (get-window-in-mode 'treemacs-mode)))
-      (cond ((focused-window-p win) (winum-select-window-1))
-            (win (winum-select-window-1) (select-window win))
-            (t (winum-select-window-1) (treemacs-select-window)))))
-
-  (bind-key* "C-;" 'switch-treemacs)
+  (bind-key* "C-;" 'treemacs-select-window)
+  (bind-key* "C-:" 'winum-select-window-1)
 
   (treemacs-select-window)
 
@@ -600,26 +581,21 @@ before packages are loaded."
 
   (evil-define-key nil term-raw-map (kbd "C-u") 'scroll-down)
   (evil-define-key nil term-raw-map (kbd "C-d") 'scroll-up)
-  ;;(bind-key "C-u" 'scroll-down term-raw-map)
-  ;;(bind-key "C-d" 'scroll-up term-raw-map)
+
+  (defun get-window-in-mode (mode)
+    (catch 'found
+      (dolist (buf (buffer-list) nil)
+        (with-current-buffer buf
+          (when (eq major-mode mode)
+            (throw 'found (get-buffer-window buf)))))))
 
   (defun toggle-shell ()
     (interactive)
     (let ((win (get-window-in-mode 'term-mode)))
-      (cond ((focused-window-p win) (winum-select-window-1) (delete-window win))
-            (win (delete-window win))
+      (cond (win (delete-window win))
             (t (spacemacs/default-pop-shell)))))
 
   (bind-key* "C-@" 'toggle-shell)
-
-  (defun switch-shell ()
-    (interactive)
-    (let ((win (get-window-in-mode 'term-mode)))
-      (cond ((focused-window-p win) (winum-select-window-1))
-            (win (select-window win))
-            (t (spacemacs/default-pop-shell)))))
-
-  (bind-key* "C-:" 'switch-shell)
 
   ;;
   ;; c++-mode
