@@ -569,7 +569,6 @@ before packages are loaded."
   ;;
   ;; Treemacs
   ;;
-  (bind-key* "C-;" 'treemacs-select-window)
   (bind-key* "C-:" 'winum-select-window-1)
 
   (treemacs-select-window)
@@ -595,7 +594,7 @@ before packages are loaded."
       (cond (win (delete-window win))
             (t (spacemacs/default-pop-shell)))))
 
-  (bind-key* "C-@" 'toggle-shell)
+  (bind-key* "C-;" 'toggle-shell)
 
   ;;
   ;; c++-mode
