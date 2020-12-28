@@ -74,7 +74,7 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '(format-all)
+   dotspacemacs-additional-packages '(exec-path-from-shell format-all)
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -542,21 +542,6 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   ;;
   (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
   (setq undo-tree-auto-save-history t)
-
-  ;;
-  ;; isort
-  ;;
-  (setq py-isort-options '("--profile=black"))
-  (add-hook 'python-mode-hook
-            (lambda () (add-hook 'before-save-hook 'py-isort-before-save nil 'local)))
-
-  ;;
-  ;; format-all
-  ;;
-  (add-hook 'prog-mode-hook 'format-all-ensure-formatter)
-  (add-hook 'prog-mode-hook 'format-all-mode)
-  (add-hook 'prog-mode-hook
-            (lambda () (add-hook 'after-save-hook 'recenter nil 'local)))
   )
 
 (defun dotspacemacs/user-load ()
@@ -615,6 +600,27 @@ before packages are loaded."
   (bind-key* "C-@" 'toggle-shell)
 
   ;;
+  ;; exec-path-from-shell
+  ;;
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize))
+
+  ;;
+  ;; isort
+  ;;
+  (setq py-isort-options '("--profile=black"))
+  (add-hook 'python-mode-hook
+            (lambda () (add-hook 'before-save-hook 'py-isort-before-save nil 'local)))
+
+  ;;
+  ;; format-all
+  ;;
+  (add-hook 'prog-mode-hook 'format-all-ensure-formatter)
+  (add-hook 'prog-mode-hook 'format-all-mode)
+  (add-hook 'prog-mode-hook
+            (lambda () (add-hook 'after-save-hook 'recenter nil 'local)))
+
+  ;;
   ;; C++
   ;;
   (setq auto-mode-alist
@@ -633,11 +639,10 @@ before packages are loaded."
   ;;
   ;; Python
   ;;
-  (setenv "PYTHONPATH"
-          (concat
-           (getenv "HOME") "/OneDrive/projects/pyxel"
-           ":" (getenv "PYTHONPATH")))
-
+  ;;(setenv "PYTHONPATH"
+  ;;        (concat
+  ;;         (getenv "HOME") "/OneDrive/projects/pyxel"
+  ;;         ":" (getenv "PYTHONPATH")))
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
