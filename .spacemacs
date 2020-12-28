@@ -38,7 +38,6 @@ This function should only modify configuration layer settings."
      ;; Uncomment some layer names and press `SPC f e R' (Vim style) or
      ;; `M-m f e R' (Emacs style) to install them.
      ;; ----------------------------------------------------------------
-     ;; auto-completion
      ;; better-defaults
      ;; git
      ;; lsp
@@ -46,6 +45,10 @@ This function should only modify configuration layer settings."
      ;; spell-checking
      ;; syntax-checking
      ;; version-control
+     (auto-completion :variables
+                      auto-completion-idle-delay 0
+                      auto-completion-minimum-prefix-length 2
+                      auto-completion-selection-wrap-around t)
      emacs-lisp
      helm
      markdown
@@ -77,7 +80,7 @@ This function should only modify configuration layer settings."
    dotspacemacs-frozen-packages '()
 
    ;; A list of packages that will not be installed and loaded.
-   dotspacemacs-excluded-packages '()
+   dotspacemacs-excluded-packages '(smartparens)
 
    ;; Defines the behaviour of Spacemacs when installing packages.
    ;; Possible values are `used-only', `used-but-keep-unused' and `all'.
@@ -541,11 +544,17 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   (setq undo-tree-auto-save-history t)
 
   ;;
+  ;; isort
+  ;;
+  (setq py-isort-options '("--profile=black"))
+  (add-hook 'python-mode-hook
+            (lambda () (add-hook 'before-save-hook 'py-isort-before-save nil 'local)))
+
+  ;;
   ;; format-all
   ;;
-  (add-hook 'prog-mode-hook 'format-all-buffer)
-  ;;(add-hook 'before-save-hook 'format-all-buffer)
-  ;;(add-hook 'before-save-hook 'py-isort-before-save)
+  (add-hook 'prog-mode-hook 'format-all-ensure-formatter)
+  (add-hook 'prog-mode-hook 'format-all-mode)
   )
 
 (defun dotspacemacs/user-load ()
@@ -553,15 +562,6 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
 This function is called only while dumping Spacemacs configuration. You can
 `require' or `load' the libraries of your choice that will be included in the
 dump."
-  ;;
-  ;; company
-  ;;
-  ;;(global-company-mode)
-  ;;(define-key company-active-map (kbd "C-n") 'company-select-next)
-  ;;(define-key company-active-map (kbd "C-p") 'company-select-previous)
-  ;;(define-key company-active-map (kbd "C-h") nil)
-  ;;(define-key company-search-map (kbd "C-n") 'company-select-next)
-  ;;(define-key company-search-map (kbd "C-p") 'company-select-previous)
   )
 
 (defun dotspacemacs/user-config ()
@@ -570,6 +570,17 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
+  ;;
+  ;; company
+  ;;
+  (global-company-mode)
+
+  (define-key company-active-map (kbd "C-p") 'company-select-previous)
+  (define-key company-search-map (kbd "C-p") 'company-select-previous)
+  (define-key company-active-map (kbd "C-n") 'company-select-next)
+  (define-key company-search-map (kbd "C-n") 'company-select-next)
+  (define-key company-active-map (kbd "C-h") nil)
+
   ;;
   ;; Treemacs
   ;;
