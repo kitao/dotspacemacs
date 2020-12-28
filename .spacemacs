@@ -586,6 +586,7 @@ before packages are loaded."
   ;;
   ;; Treemacs
   ;;
+  (bind-key* "C-;" 'treemacs-select-window)
   (bind-key* "C-:" 'winum-select-window-1)
 
   (treemacs-select-window)
