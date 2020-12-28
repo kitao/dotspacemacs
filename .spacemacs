@@ -40,21 +40,28 @@ This function should only modify configuration layer settings."
      ;; ----------------------------------------------------------------
      ;; auto-completion
      ;; better-defaults
-     emacs-lisp
      ;; git
-     helm
      ;; lsp
-     ;; markdown
-     multiple-cursors
      ;; org
-     ;; (shell :variables
-     ;;        shell-default-height 30
-     ;;        shell-default-position 'bottom)
      ;; spell-checking
      ;; syntax-checking
      ;; version-control
-     treemacs)
-
+     emacs-lisp
+     helm
+     markdown
+     multiple-cursors
+     python
+     rust
+     (shell :variables
+            shell-default-shell 'ansi-term
+            shell-default-position 'bottom
+            shell-default-height 25
+            shell-pop-autocd-to-working-dir nil
+            close-window-with-terminal t)
+     (treemacs :variables
+               treemacs-width 30
+               treemacs-no-png-images t)
+     )
 
    ;; List of additional packages that will be installed without being wrapped
    ;; in a layer (generally the packages are installed only and should still be
@@ -64,7 +71,7 @@ This function should only modify configuration layer settings."
    ;; `dotspacemacs/user-config'. To use a local version of a package, use the
    ;; `:location' property: '(your-package :location "~/path/to/your-package/")
    ;; Also include the dependencies as they will not be resolved automatically.
-   dotspacemacs-additional-packages '()
+   dotspacemacs-additional-packages '(format-all)
 
    ;; A list of packages that cannot be updated.
    dotspacemacs-frozen-packages '()
@@ -231,7 +238,7 @@ It should only modify the values of Spacemacs settings."
    ;; a non-negative integer (pixel size), or a floating-point (point size).
    ;; Point size is recommended, because it's device independent. (default 10.0)
    dotspacemacs-default-font '("Source Code Pro"
-                               :size 10.0
+                               :size 15.0
                                :weight normal
                                :width normal)
 
@@ -325,7 +332,7 @@ It should only modify the values of Spacemacs settings."
 
    ;; If non-nil the frame is fullscreen when Emacs starts up. (default nil)
    ;; (Emacs 24.4+ only)
-   dotspacemacs-fullscreen-at-startup nil
+   dotspacemacs-fullscreen-at-startup t
 
    ;; If non-nil `spacemacs/toggle-fullscreen' will not use native fullscreen.
    ;; Use to disable fullscreen animations in OSX. (default nil)
@@ -453,7 +460,7 @@ It should only modify the values of Spacemacs settings."
    ;; `trailing' to delete only the whitespace at end of lines, `changed' to
    ;; delete only whitespace for changed lines or `nil' to disable cleanup.
    ;; (default nil)
-   dotspacemacs-whitespace-cleanup nil
+   dotspacemacs-whitespace-cleanup 'all
 
    ;; If non nil activate `clean-aindent-mode' which tries to correct
    ;; virtual indentation of simple modes. This can interfer with mode specific
@@ -496,6 +503,49 @@ This function is called immediately after `dotspacemacs/init', before layer
 configuration.
 It is mostly for variables that should be set before packages are loaded.
 If you are unsure, try setting them in `dotspacemacs/user-config' first."
+  ;;
+  ;; working directories
+  ;;
+  (setq default-directory "~/")
+  (setq command-line-default-directory "~/")
+
+  ;;
+  ;; file operation settings
+  ;;
+  (setq vc-follow-symlinks t)
+  (setq auto-revert-check-vc-info t)
+
+  ;;
+  ;; search settings
+  ;;
+  (modify-syntax-entry ?_ "w")
+
+  ;;
+  ;; display settings
+  ;;
+  (setq byte-compile-warnings '(not cl-functions obsolete))
+
+  ;;
+  ;; key bindings
+  ;;
+  (define-key key-translation-map [?\C-h] [?\C-?])
+  (define-key key-translation-map [?\M-¥] [?\\])
+
+  (when (eq system-type 'darwin)
+    (setq ns-command-modifier (quote meta)))
+
+  ;;
+  ;; undo-tree
+  ;;
+  (setq undo-tree-history-directory-alist '(("." . "~/.emacs.d/undo")))
+  (setq undo-tree-auto-save-history t)
+
+  ;;
+  ;; format-all
+  ;;
+  (add-hook 'prog-mode-hook 'format-all-buffer)
+  ;;(add-hook 'before-save-hook 'format-all-buffer)
+  ;;(add-hook 'before-save-hook 'py-isort-before-save)
   )
 
 (defun dotspacemacs/user-load ()
@@ -503,6 +553,15 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
 This function is called only while dumping Spacemacs configuration. You can
 `require' or `load' the libraries of your choice that will be included in the
 dump."
+  ;;
+  ;; company
+  ;;
+  ;;(global-company-mode)
+  ;;(define-key company-active-map (kbd "C-n") 'company-select-next)
+  ;;(define-key company-active-map (kbd "C-p") 'company-select-previous)
+  ;;(define-key company-active-map (kbd "C-h") nil)
+  ;;(define-key company-search-map (kbd "C-n") 'company-select-next)
+  ;;(define-key company-search-map (kbd "C-p") 'company-select-previous)
   )
 
 (defun dotspacemacs/user-config ()
@@ -511,6 +570,60 @@ This function is called at the very end of Spacemacs startup, after layer
 configuration.
 Put your configuration code here, except for variables that should be set
 before packages are loaded."
+  ;;
+  ;; Treemacs
+  ;;
+  (bind-key* "C-:" 'winum-select-window-1)
+
+  (treemacs-select-window)
+
+  ;;
+  ;; Shell
+  ;;
+  (evil-set-initial-state 'term-mode 'emacs)
+
+  (evil-define-key nil term-raw-map (kbd "C-u") 'scroll-down)
+  (evil-define-key nil term-raw-map (kbd "C-d") 'scroll-up)
+
+  (defun get-window-in-mode (mode)
+    (catch 'found
+      (dolist (buf (buffer-list) nil)
+        (with-current-buffer buf
+          (when (eq major-mode mode)
+            (throw 'found (get-buffer-window buf)))))))
+
+  (defun toggle-shell ()
+    (interactive)
+    (let ((win (get-window-in-mode 'term-mode)))
+      (cond (win (delete-window win))
+            (t (spacemacs/default-pop-shell)))))
+
+  (bind-key* "C-@" 'toggle-shell)
+
+  ;;
+  ;; C++
+  ;;
+  (setq auto-mode-alist
+        (append '(("\\.h$" . c++-mode))
+                auto-mode-alist))
+
+  (add-hook 'c++-mode-hook
+            '(lambda()
+               ;;(c-set-style "stroustrup")
+               ;;(setq indent-tabs-mode nil)
+               (c-set-offset 'innamespace 0)
+               (c-set-offset 'inextern-lang 0)
+               ;;(c-set-offset 'arglist-close 0)
+               ))
+
+  ;;
+  ;; Python
+  ;;
+  (setenv "PYTHONPATH"
+          (concat
+           (getenv "HOME") "/OneDrive/projects/pyxel"
+           ":" (getenv "PYTHONPATH")))
+
   )
 
 ;; Do not write anything past this comment. This is where Emacs will
