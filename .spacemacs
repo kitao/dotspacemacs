@@ -555,6 +555,8 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   ;;
   (add-hook 'prog-mode-hook 'format-all-ensure-formatter)
   (add-hook 'prog-mode-hook 'format-all-mode)
+  (add-hook 'prog-mode-hook
+            (lambda () (add-hook 'after-save-hook 'recenter nil 'local)))
   )
 
 (defun dotspacemacs/user-load ()
