@@ -521,7 +521,7 @@ If you are unsure, try setting them in `dotspacemacs/user-config' first."
   ;;
   ;; search settings
   ;;
-  (modify-syntax-entry ?_ "w")
+  (add-hook 'prog-mode-hook (lambda () (modify-syntax-entry ?_ "w")))
 
   ;;
   ;; display settings
@@ -591,10 +591,14 @@ before packages are loaded."
           (when (eq major-mode mode)
             (throw 'found (get-buffer-window buf)))))))
 
+  (defun focused-window-p (win)
+    (and win (eq win (selected-window))))
+
   (defun toggle-shell ()
     (interactive)
     (let ((win (get-window-in-mode 'term-mode)))
-      (cond (win (delete-window win))
+      (cond ((focused-window-p win) (delete-window win))
+            (win (select-window win))
             (t (spacemacs/default-pop-shell)))))
 
   (bind-key* "C-@" 'toggle-shell)
