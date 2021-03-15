@@ -53,6 +53,7 @@ This function should only modify configuration layer settings."
      helm
      markdown
      multiple-cursors
+     nim
      python
      rust
      (shell :variables
@@ -575,6 +576,7 @@ before packages are loaded."
   (bind-key* "C-:" 'winum-select-window-1)
 
   (treemacs-select-window)
+  (winum-select-window-1)
 
   ;;
   ;; Shell
@@ -639,6 +641,16 @@ before packages are loaded."
                (c-set-offset 'inextern-lang 0)
                ;;(c-set-offset 'arglist-close 0)
                ))
+
+  ;;
+  ;; Nim
+  ;;
+  (defun nim-after-save-hook ()
+    (when (eq major-mode 'nim-mode)
+      (let ((file-name (buffer-file-name (window-buffer (minibuffer-selected-window)))))
+        (shell-command (format "nimpretty --indent:2 %s" file-name) nil))))
+
+  (add-hook 'after-save-hook 'nim-after-save-hook)
 
   ;;
   ;; Python
